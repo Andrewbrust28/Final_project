@@ -1,0 +1,155 @@
+#install.packages("wesanderson")
+####
+# Load packages
+####
+library(plyr)
+library(tidyverse)
+library(rvest)
+library(ggrepel)
+library(readr)
+library(RCurl)
+library(jpeg)
+
+####
+# Choosing a player
+####
+# Use website https://r6.tracker.network/ and add player name and slug
+player <- "Shaiiko"
+slug <- "Shaiiko.BDS"
+
+####
+# Get player's stats
+####
+# define players page URL and players image URL
+url <- paste0("https://r6.tracker.network/profile/pc/Shaiiko.BDS")
+image_url <- paste0("https://liquipedia.net/rainbowsix/File:Shaiiko.jpg")
+
+# Read all stats
+# Read total stats
+ttl_stats <- url %>%
+  read_html %>%
+  html_node(#totals") %>%
+    #html_text() %>%
+    #paste(collapse = " ") %>%
+    html_table()
+    
+# Read advanced stats
+advn_stats <- url %>%
+   read_html %>%
+   html_node("#advanced") %>%
+   #html_text() %>%
+   #paste(collapse = " ") %>%
+    html_table()
+    
+# Merge stats tables
+total_stats <- merge(ttl_stats, advn_stats, by = c("KD", "kills/match", "kills", "deaths", "wins", "rank", "max rank", "rank points", "max rank points"))
+    
+Veiw(total_stats)
+
+# Merge all stats data
+total_stats$player_name <- player 
+total_stats$season <- paste0(substr(total_stats$season,1,2), substr(total_stats$season,6,7))
+all_stats <- merge(total_stats, by = c("player_name", "season"))
+
+veiw(all_stats)
+####
+#select stats
+####
+str(all_stats)
+# The stats we want
+generalcombat_stats <- c("headshot%", "bulletshit", "bulletsfired")
+general_stats <- c("KD", "deaths", "headshots", "wins", "losses", "win%")
+
+stats <- generalcombat_stats
+stats <- general_stats
+
+df <- total_stats %>% select(Season, "Team" = Tm, unlist(stats))
+df <- all_stats %>% select(Season, "Team" = Tm, unlist(stats))
+df$"headshot%" <- df$"headhsot%"*100
+df$"bulletshit" <- df$"bulletshit"*100
+df$"bulletsfired" <- df$"Bulletsfired"*100
+
+df_avg <- df[,3:(ncol(df)-1)]/df$---
+df <- cbind(df[,1:2],df_avg)
+
+df_stats <- df %>% gather(stat_cat, Stat_val, 3:ncol(df))
+
+# filter data
+df_stats <- dplyr::filter(df_stats, grepl("-", Season))
+df_stats <- dplyr::filter(df_stats, !grepl("TOT", Team))
+df_stats <- unique(df_stats)
+
+df_stats <- merge(df_stats, data.frame("Season" = total_stats$Season, "---" = total_stats$G.x), by = "season")
+
+Veiw(df_stats)
+
+####
+# Static chart
+####
+library(viridis)
+
+# Get colums and pivot wider
+p <- df_stats %>%
+  ggplot(aes(x = paste0(Season," ",Team,"\n",---,"---"),
+             y = Stat_val,
+             label = stat_cat)) +
+  # Add points
+  geom_point(aes(fill = Stat_cat),
+             size = 3
+             color = "black",
+             shape = 21)
+
+# Add lines
+p <- p + geom_line(aes(group = Stat_cat), size = 0.05)
+
+# Add labels
+p <- p + geom_text_repel(data = filter(df_stats, season == last(season)).
+                         aes(label = Stat_cat),
+                         size = 2.5
+                         box.padding = 0.2,
+                         point.padding = 0.2
+                         force = 50,
+                         sgement.size = 0.2,
+                         #colour = "black",
+                         segement.color = "gray50")
+
+# Edit axis
+p <- p + scale_y_continuous(breaks = seq(0, ceiling(max(df_stats$Stat_val,na.rn = TRUE)), 5))
+
+# Add title, subtitle and caption
+p <- p + labs(title = paste0(player, "Career Stats"),
+              subtitle = paste0(min(df_stats$Season), "to",max(df_stats$Season)),
+              x = "",
+              y = "",
+              caption = c(""))
+
+# Add theme that removes the legend, modify title, captions, and x-axis
+p <- p + theme(legend.positions = 'none',
+               plot.title = element_text(size =17, face = "bold", hjust = .5)
+               plot.subtitle = element_text(face = 'italic', size =13, hjust = .5),
+               axis.text.x = element_text(angle = 60, hjust = 1, size = 10),
+               plot.captain = element_text(color = 'gray40'),
+               plot.margin = margin(10, 10, 15, 10))
+
+# Add players image 
+# Need a JPG function
+get_jpg <- function(filename) {
+  grid::rasterGrob(readJPEG(getURLContent(filename)), interpolate = T) -2
+}
+ pic <- get_jpg(image_url)
+ 
+ # Save the plot
+ chart_type <- "avg_stats"
+ chart_type <- "main_stats"
+ chart_type <- "advn_stats"
+ ggsave(paste0(player, "-",chart_type, ".jpg"), p, width = 7, height = 7, dpi = 400)
+ 
+ ####
+ # To add additional players
+ # needto go back to player stats after name and slug
+ player <- "some other player"
+ slug <- "for said other player"
+ 
+
+
+    

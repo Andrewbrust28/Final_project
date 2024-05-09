@@ -1,0 +1,13 @@
+You will need to install this package.
+install.packages("wesanderson")
+
+And then you will need to aplly these to the code before you begin working.
+I have left it in as part of the code so you should be able to just copy and paste the code and then run it. 
+
+library(plyr)
+library(tidyverse)
+library(rvest)
+library(ggrepel)
+library(readr)
+library(RCurl)
+library(jpeg)

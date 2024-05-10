@@ -1,0 +1,33 @@
+
+Step 1 is to install the packages 
+install.packages("wesanderson")
+install.packages("plyr")
+install.packages("tidyverse")
+install.packages("rvest")
+install.packages("ggrepel")
+install.packages("readr")
+install.packages("RCurl")
+install.packages("jpeg")
+
+
+Step 2 is to Load the libraries
+library(plyr)
+library(tidyverse)
+library(rvest)
+library(ggrepel)
+library(readr)
+library(RCurl)
+library(jpeg)
+
+
+Step 3 is to get player stats from the website "https://r6.tracker.network"
+Add player name and player slug, in this case I chose the player Shaiiko
+player <- "Shaiiko"
+slug <- "Shaiiko"
+
+Then define player page URL and player image URL
+url <- paste0("https://r6.tracker.network/profile/pc/Shaiiko.BDS")
+image_url <- paste0("https://liquipedia.net/rainbowsix/File:Shaiiko.jpg")
+
+
+
